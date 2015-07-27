@@ -311,19 +311,24 @@ func scanString(t Tokenizer) Token {
 // this is useful when using an third-party json parser which expects
 // a byte-slice as input (such as json, ffjson, etc.)
 func FastScanJSON(t Tokenizer) (tok Token) {
-    var nestingLevel int = 0
+    nestingLevel := 0
     // the closing brace may only appear within a string
-    for ch := t.Read(); (ch != '}'|| nestingLevel > 0) && ch != eof; ch = t.Read() {
+    for ch := t.Read(); ; ch = t.Read() {
         switch ch {
         case '"':
             scanString(t)
         case '{':
             nestingLevel += 1
         case '}':
+            if nestingLevel == 0 {
+                return JSON
+            }
             nestingLevel -= 1
+        case eof:
+            return ILLEGAL
         }
+
     }
-    return JSON
 }
 
 
