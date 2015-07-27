@@ -320,9 +320,6 @@ func FastScanJSON(t Tokenizer) (tok Token) {
         case '{':
             nestingLevel += 1
         case '}':
-            if nestingLevel < 1 {
-                return ILLEGAL
-            }
             nestingLevel -= 1
         }
     }
