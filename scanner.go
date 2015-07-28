@@ -111,8 +111,8 @@ func Scan(t Tokenizer, ignoreWS bool) (tok Token) {
         case '-': tok = scanNumber(t, ch)
         case ';': tok = SEMI
         case '{': tok = FastScanJSON(t)
-        case '[': tok = OPEN_BRACKET
-        case ']': tok = CLOSE_BRACKET
+        //case '[': tok = OPEN_BRACKET // arrays are not supported yet
+        //case ']': tok = CLOSE_BRACKET // arrays are not supported yet
         case '(': tok = OPEN_PAREN
         case ')': tok = CLOSE_PAREN
         case ':':
