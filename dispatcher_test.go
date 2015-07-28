@@ -9,7 +9,7 @@ import (
 )
 
 type MockObject struct {
-    OutString bytes.Buffer
+    OutString *bytes.Buffer
     firstDispatch bool
 }
 
@@ -53,8 +53,10 @@ func (m *MockObject) MarshalJSON() ([]byte, error) {
     out := bytes.Buffer{}
 
     out.WriteString(`{"OutString": `)
-    out.WriteString(fmt.Sprintf("\"%s\"", string(m.OutString.Bytes())))
+    out.WriteString(fmt.Sprintf("%q", m.OutString.Bytes() ))
     out.WriteRune('}')
+    m.OutString = &bytes.Buffer{}
+    m.firstDispatch = false
     return out.Bytes(), nil
 }
 
@@ -72,25 +74,32 @@ func TestDispatcher(t *testing.T) {
 
         {in: `v1 := mockObject.test(1, "string");`,
         out: fmt.Sprintf(
-            `{"v1":{"OutString": "mockObject.test(%d:1, %d:"string")"}}`,
+            `{"v1":{"OutString": "mockObject.test(%d:1, %d:\"string\")"}}`,
             vesupro.INT, vesupro.STRING)},
 
         {in: `v1 := mockObject.test({"a": {"bla": 1}});`,
         out: fmt.Sprintf(
-            `{"v1":{"OutString": "mockObject.test(%d:{"a": {"bla": 1}})"}}`,
+            `{"v1":{"OutString": "mockObject.test(%d:{\"a\": {\"bla\": 1}})"}}`,
             vesupro.JSON)},
 
         {in: `v1 := mockObject.foo(0.1).bar(true);`,
         out: fmt.Sprintf(
             `{"v1":{"OutString": "mockObject.foo(%d:0.1).bar(%d:true)"}}`,
             vesupro.FLOAT, vesupro.TRUE)},
+
+            {in: `v1 := mockObject.foo(0.1).bar(true);` +
+            `v2 := mockObject.test("foobar");`,
+        out: fmt.Sprintf(
+            `{"v1":{"OutString": "mockObject.foo(%d:0.1).bar(%d:true)"},` +
+            "\n" + `"v2":{"OutString": "mockObject.test(%d:\"foobar\")"}}`,
+            vesupro.FLOAT, vesupro.TRUE, vesupro.STRING)},
     }
 
 
     for i, tt := range tests {
         in := bytes.NewBufferString(tt.in)
         symTable := map[string]vesupro.VesuproObject{
-            "mockObject": &MockObject{},
+            "mockObject": &MockObject{OutString: &bytes.Buffer{}},
         }
         out := &bytes.Buffer{}
 
