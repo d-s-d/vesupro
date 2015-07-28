@@ -110,8 +110,7 @@ func Scan(t Tokenizer, ignoreWS bool) (tok Token) {
         case ',': tok = COMMA
         case '-': tok = scanNumber(t, ch)
         case ';': tok = SEMI
-        case '{': tok = OPEN_BRACE
-        case '}': tok = CLOSE_BRACE
+        case '{': tok = FastScanJSON(t)
         case '[': tok = OPEN_BRACKET
         case ']': tok = CLOSE_BRACKET
         case '(': tok = OPEN_PAREN
@@ -179,6 +178,7 @@ func scanNumber(t Tokenizer, ch rune) (tok Token) {
         ExponentFirstDigit
         ExponentDigit
         End
+        Error
     )
 
     tok = INT
@@ -192,11 +192,11 @@ func scanNumber(t Tokenizer, ch rune) (tok Token) {
             case isDigit(ch):
                 state = Significant
             default:
-                tok = ILLEGAL
+                state = Error
             }
         case SignificantStart:
             if !isDigit(ch) {
-                tok = ILLEGAL
+                state = Error
             } else {
                 state = Significant
             }
@@ -227,11 +227,11 @@ func scanNumber(t Tokenizer, ch rune) (tok Token) {
             case ch == '-' || ch == '+':
                 state = ExponentFirstDigit
             default:
-                tok = ILLEGAL
+                state = Error
             }
         case ExponentFirstDigit:
             if !isDigit(ch) {
-                tok = ILLEGAL
+                state = Error
             } else {
                 state = ExponentDigit
             }
@@ -240,10 +240,18 @@ func scanNumber(t Tokenizer, ch rune) (tok Token) {
                 state = End
             }
         }
-        if tok == ILLEGAL || state == End {
-            break;
+        if state >= End {
+            break
         }
     } // loop over ch
+
+    if state < Error && ch != eof {
+        t.Unread()
+    }
+
+    if state == Error {
+        tok = ILLEGAL
+    }
 
     return
 }
@@ -268,11 +276,10 @@ func scanString(t Tokenizer) Token {
             switch {
             case ch == '"':
                 state = End
-                return STRING
             case ch == '\\':
                 state = Esc
             case ch < 0x20:
-                return ILLEGAL
+                state = Error
             }
         case Esc:
             switch ch {
@@ -281,7 +288,7 @@ func scanString(t Tokenizer) Token {
             case 'u':
                 state = EscU
             default:
-                return ILLEGAL;
+                state = Error
             }
         case EscU, EscU1, EscU12, EscU123:
             if '0' <= ch && ch <= '9' || 'a' <= ch &&
@@ -292,7 +299,7 @@ func scanString(t Tokenizer) Token {
                     state = InString
                 }
             } else {
-                return ILLEGAL;
+                state = Error
             }
         }
         if state >= End {
@@ -303,7 +310,6 @@ func scanString(t Tokenizer) Token {
     if state != End {
         return ILLEGAL
     }
-    t.Unread()
     return STRING
 }
 
