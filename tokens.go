@@ -20,8 +20,6 @@ const (
 
     OPEN_PAREN     // '('
     CLOSE_PAREN    // ')'
-    OPEN_BRACE     // '{'
-    CLOSE_BRACE    // '}'
     OPEN_BRACKET   // '['
     CLOSE_BRACKET  // ']'
 
