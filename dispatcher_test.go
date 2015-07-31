@@ -87,7 +87,7 @@ func TestDispatcher(t *testing.T) {
             `{"v1":{"OutString": "mockObject.foo(%d:0.1).bar(%d:true)"}}`,
             vesupro.FLOAT, vesupro.TRUE)},
 
-            {in: `v1 := mockObject.foo(0.1).bar(true);` +
+        {in: `v1 := mockObject.foo(0.1).bar(true);` +
             `v2 := mockObject.test("foobar");`,
         out: fmt.Sprintf(
             `{"v1":{"OutString": "mockObject.foo(%d:0.1).bar(%d:true)"},` +
