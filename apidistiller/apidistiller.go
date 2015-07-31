@@ -92,7 +92,7 @@ func (api *Api) DistillFromAstFile(f *ast.File) error {
 
         _, exists := api.Methods[receiverTypeName]
         if !exists {
-            api.Methods[receiverTypeName] = make([]*Method, 1)
+            api.Methods[receiverTypeName] = make([]*Method, 0)
         }
 
         // parse methods
