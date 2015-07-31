@@ -6,7 +6,8 @@ import (
     "go/ast"
 )
 
-var BasicTypes map[string][]string = map[string][]string{
+// BasicTypes maps basic go types to the corresponding vesupro tokens.
+var BasicTypes = map[string][]string{
     "uint": []string{"vesupro.INT"},
     "uint8": []string{"vesupro.INT"},
     "uint16": []string{"vesupro.INT"},
@@ -27,9 +28,13 @@ var BasicTypes map[string][]string = map[string][]string{
     "string": []string{"vesupro.STRING"},
 }
 
+// VesuproRegexp is the regular expression used to identify functions which
+// belong to the Api.
 var VesuproRegexp = regexp.MustCompile("^//\\s*vesupro:\\s*export.*$")
 
 // # API Representation #
+
+// Parameter represents a formal parameter of an exported method.
 type Parameter struct {
     Position uint   // position of the argument
     TypeName string // name of the type 'A' for '*A' for instance
@@ -41,22 +46,26 @@ type Parameter struct {
     IsStruct bool
 }
 
+// Method represents an exported method of the API.
 type Method struct {
     Name string
     Params []*Parameter
 }
 
-type Api struct {
+// API represents the api
+type API struct {
     // maps receiver type to functions
     Methods map[string] []*Method
     PackageName string
 }
 
-func NewAPI(pkgName string) *Api {
-    return &Api{make(map[string][]*Method, 0), pkgName}
+// NewAPI Creates a new Api.
+func NewAPI(pkgName string) *API {
+    return &API{make(map[string][]*Method, 0), pkgName}
 }
 
-func (api *Api) DistillFromAstFile(f *ast.File) error {
+// DistillFromAstFile distills the API from the provided ast.file
+func (api *API) DistillFromAstFile(f *ast.File) error {
     if f.Name.Name != api.PackageName {
         return fmt.Errorf("Including methods from different packages in the " +
             "same API is not supported (api package %q, file package %q).",
@@ -131,11 +140,11 @@ func (api *Api) DistillFromAstFile(f *ast.File) error {
 
             // iterate over names
             var curParam  *Parameter
-            for _, _ = range paramField.Names {
+            for _ = range paramField.Names {
                 curParam = &Parameter{}
                 *curParam = *parameterTemplate
                 curParam.Position = uint(actualPos)
-                actualPos += 1
+                actualPos++
                 methodCall.Params = append(methodCall.Params,
                     curParam)
             }
