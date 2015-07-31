@@ -45,6 +45,7 @@ t vesupro.Tokenizer) (vesupro.VesuproObject, error) {
         }
     }
     m.OutString.WriteRune(')')
+    t.Unread()
 
     return m, nil
 }

@@ -43,6 +43,11 @@ receiver VesuproObject) (VesuproObject, error) {
                 return nil, err
             }
 
+            tok = Scan(t, true)
+            if tok != CLOSE_PAREN {
+                return nil, newParseError("CLOSE_PAREN", tok, t.CurrentToken())
+            }
+
             return parseCallChain(t, symTable, newRcvr)
         default:
             return nil, newParseError("SEMI or DOT", tok, t.CurrentToken())
