@@ -3,6 +3,7 @@ package vesupro
 import (
     "bufio"
     "io"
+    "fmt"
     "unicode/utf8"
     "unicode"
     "bytes"
@@ -16,21 +17,16 @@ type Tokenizer interface {
 
     StartToken()
     CurrentToken() []byte
+    RuneOffset() int
 }
 
 // TYPES
-type BufferedRuneStream struct {
-    start int
-    off int
-    lastSize int
-
-    data []byte
-}
 
 type RuneStream struct {
     reader *bufio.Reader
     buf *bytes.Buffer
     lastSize int
+    runeOffset int
 }
 
 func (s* RuneStream) Read() rune {
@@ -39,6 +35,7 @@ func (s* RuneStream) Read() rune {
 		return eof
 	}
     s.lastSize = lastSize
+    s.runeOffset++
     s.buf.WriteRune(ch)
 	return ch
 }
@@ -48,6 +45,7 @@ func (s* RuneStream) Unread() {
         err := s.reader.UnreadRune()
         if err != nil {
             s.buf.Truncate(s.buf.Len() - s.lastSize)
+            s.runeOffset--
         }
     }
 }
@@ -60,15 +58,30 @@ func (s* RuneStream) CurrentToken() []byte {
     return s.buf.Bytes()
 }
 
+func (s* RuneStream) RuneOffset() int {
+    return s.runeOffset
+}
+
+type BufferedRuneStream struct {
+    start int
+    off int
+    runeOffset int
+    lastSize int
+
+    data []byte
+}
+
 func (s* BufferedRuneStream) Read() rune {
     ch, lastSize := utf8.DecodeRune(s.data[s.off:])
     s.lastSize = lastSize
     s.off = s.off + lastSize
+    s.runeOffset++
     return ch
 }
 
 func (s* BufferedRuneStream) Unread() {
     s.off -= s.lastSize
+    s.runeOffset--
 }
 
 func (s* BufferedRuneStream) StartToken() {
@@ -77,6 +90,10 @@ func (s* BufferedRuneStream) StartToken() {
 
 func (s* BufferedRuneStream) CurrentToken() []byte {
     return s.data[s.start:s.off]
+}
+
+func (s* BufferedRuneStream) RuneOffset() int {
+    return s.runeOffset
 }
 
 func NewTokenizer(r io.Reader) Tokenizer {
@@ -124,6 +141,16 @@ func Scan(t Tokenizer, ignoreWS bool) (tok Token) {
         }
     }
     return
+}
+
+func ScanExpTok(t Tokenizer, want Token, ignoreWS bool) error {
+    got := Scan(t, ignoreWS)
+    if got != want {
+        return fmt.Errorf(
+            "Expected token id %d, got %d. (Rune pos.: %d)", want, got,
+            t.RuneOffset())
+    }
+    return nil
 }
 
 func scanWhitespace(t Tokenizer) Token {

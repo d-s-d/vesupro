@@ -16,7 +16,7 @@ const (
     BOOL   // true || false
     SEMI   // ;
     DOT    // .
-    COMMA  // ,
+    COMMA  // , // pos 11
 
     OPEN_PAREN     // '('
     CLOSE_PAREN    // ')'

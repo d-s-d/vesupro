@@ -4,7 +4,6 @@ import (
     "./"
     "testing"
     "bytes"
-    "errors"
     "fmt"
 )
 
@@ -13,8 +12,7 @@ type MockObject struct {
     firstDispatch bool
 }
 
-func (m *MockObject) Dispatch(methodName string,
-t vesupro.Tokenizer) (vesupro.VesuproObject, error) {
+func (m *MockObject) Dispatch(mc *vesupro.MethodCall) (vesupro.VesuproObject, error) {
 
     if !m.firstDispatch {
         m.OutString.WriteString("mockObject")
@@ -22,30 +20,21 @@ t vesupro.Tokenizer) (vesupro.VesuproObject, error) {
     }
 
     m.OutString.WriteRune('.')
-    m.OutString.WriteString(methodName)
+    m.OutString.WriteString(mc.Name)
     m.OutString.WriteRune('(')
 
-    tok := vesupro.Scan(t, true)
-    if tok != vesupro.CLOSE_PAREN {
-        for {
-            m.OutString.WriteString(fmt.Sprintf("%d:", tok))
-            m.OutString.Write(t.CurrentToken())
+    first := true
 
-            tok = vesupro.Scan(t, true)
-            if tok == vesupro.CLOSE_PAREN {
-                break;
-            }
-            if tok != vesupro.COMMA {
-                return nil, errors.New(fmt.Sprintf(
-                    "Expected COMMA but got token id %d (%q).",
-                    tok, t.CurrentToken()))
-            }
-            tok = vesupro.Scan(t, true)
+    for _, arg := range mc.Arguments {
+        if !first {
             m.OutString.WriteString(", ")
         }
+        first = false
+        m.OutString.WriteString(fmt.Sprintf("%d:", arg.TokenType))
+        m.OutString.Write(arg.TokenContent)
     }
+
     m.OutString.WriteRune(')')
-    t.Unread()
 
     return m, nil
 }
@@ -61,7 +50,7 @@ func (m *MockObject) MarshalJSON() ([]byte, error) {
     return out.Bytes(), nil
 }
 
-func TestDispatcher(t *testing.T) {
+func TestEvaluate(t *testing.T) {
     tests := []struct {
         in string
         out string
@@ -104,7 +93,7 @@ func TestDispatcher(t *testing.T) {
         }
         out := &bytes.Buffer{}
 
-        err := vesupro.Dispatch(out, in, symTable)
+        err := vesupro.Evaluate(out, in, symTable)
 
         if err != nil {
             t.Errorf("%d. error: %q", i, err)
