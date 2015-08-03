@@ -2,6 +2,7 @@ package vesupro
 
 import (
     "fmt"
+    "strconv"
 )
 
 const initMethodCall = 4
@@ -10,6 +11,43 @@ type ArgumentToken struct {
     TokenType Token
     TokenContent []byte
 }
+
+func (arg *ArgumentToken) ToInt64() (int64, error) {
+    if arg.TokenType != INT {
+        return 0, fmt.Errorf(
+            "ToInt64(): Cannot convert Token of type %d to integer.",
+            arg.TokenType)
+    }
+    return strconv.ParseInt(string(arg.TokenContent), 10, 64)
+}
+
+func (arg *ArgumentToken) ToFloat64() (float64, error) {
+    if arg.TokenType != FLOAT {
+        return 0.0, fmt.Errorf(
+            "ToFloat64(): Cannot convert Token of type %d to float.",
+            arg.TokenType)
+    }
+    return strconv.ParseFloat(string(arg.TokenContent), 64)
+}
+
+func (arg *ArgumentToken) ToBool() (bool, error) {
+    if arg.TokenType != TRUE && arg.TokenType != FALSE {
+        return false, fmt.Errorf(
+            "ToBool(): Cannot convert Token of type %d to bool.",
+            arg.TokenType)
+    }
+    return arg.TokenType == TRUE, nil
+}
+
+func (arg *ArgumentToken) ToString() (string, error) {
+    if arg.TokenType != STRING {
+        return "", fmt.Errorf(
+            "ToString(): Cannot convert Token of type %d to string.",
+            arg.TokenType)
+    }
+    return string(arg.TokenContent), nil
+}
+
 
 type MethodCall struct {
     Name string
